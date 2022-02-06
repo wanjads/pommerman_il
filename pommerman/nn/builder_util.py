@@ -3,8 +3,10 @@ Utility methods for building the neural network architectures.
 """
 import math
 import torch
-from torch.nn import Sequential, Conv1d, Conv2d, BatchNorm2d, ReLU, LeakyReLU, Sigmoid, Tanh, Linear, Hardsigmoid, Hardswish,\
+from torch.nn import Sequential, Conv1d, Conv2d, BatchNorm2d, ReLU, LeakyReLU, Sigmoid, Tanh, Linear, \
     Module, AdaptiveAvgPool2d, BatchNorm1d
+
+#from torch.nn.functional import Hardsigmoid,  Hardswish
 
 
 def get_act(act_type):

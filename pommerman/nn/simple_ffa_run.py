@@ -2,17 +2,17 @@
 import numpy as np
 
 import sys
-sys.path.append('c:/Master_WINF/3_Semester/KI_Prak/Pommerman_wanja/pommerman_il/pommerman')
-sys.path.append("..")
-sys.path.append(".")
+#sys.path.append('c:/Master_WINF/3_Semester/KI_Prak/Pommerman_wanja/pommerman_il/pommerman')
 
-#import pommerman
-import agents
+
+import pommerman 
+from pommerman.agents import agent007, simple_agent
 import random
-#from . import imitation_net
-from nn import a2c
 
+from pommerman.nn import imitation_net
+from pommerman.nn import a2c
 from pommerman.nn import utils
+
 
 
 def main():
@@ -23,35 +23,37 @@ def main():
 
     # Create a set of agents (exactly four)
     agent_list = [
-        agents.Agent007(),
-        agents.SimpleAgent(),
-        agents.Agent007(),
-        agents.SimpleAgent(),
+        agent007.Agent007(),
+        agent007.Agent007(),
+        agent007.Agent007(),
+        agent007.Agent007(),
     ]
-    agent_pos = 0
+    
 
     env = pommerman.make('PommeRadioCompetition-v2', agent_list)
 
     model = a2c.A2CNet()
 
-    tranform_obj = utils.obsToPlanes(1)
+    tranform_obj = utils.obsToPlanes(11)
 
     # Run the episodes just like OpenAI Gym
-    num_episodes = 1
+    num_episodes = 20
     wins = 0
     nn_inputs = []
     nn_targets = []
     for i_episode in range(num_episodes):
         state = env.reset()
         done = False
+        agent_pos = random.randint(0, 3)
         while not done:
             # env.render()
             actions = env.act(state)
             state, reward, done, info = env.step(actions)
-            nn_input = imitation_net.get_nn_input(state, tranform_obj)
-            nn_inputs += [nn_input]
-            nn_target = imitation_net.get_nn_target(actions, agent_pos)
-            nn_targets += [nn_target]
+            if actions[agent_pos] != 0:
+                nn_input = imitation_net.get_nn_input(state[agent_pos], tranform_obj)
+                nn_inputs += [nn_input]
+                nn_target = imitation_net.get_nn_target(actions, agent_pos)
+                nn_targets += [nn_target]
         print('Episode {} finished'.format(i_episode + 1))
         if info['result'].value == 0 and agent_pos in info['winners']:
             win = 1

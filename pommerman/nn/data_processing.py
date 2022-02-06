@@ -6,19 +6,24 @@ import torch
 import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
-from torchvision import models
 from torch.utils.data import Dataset, DataLoader
+
+import pommerman.nn.utils
 
 import sklearn
 from sklearn.model_selection import train_test_split
 
+import os
+
 
 class Training():
-    def __init__(self, epochs, batch_size, optimizer, criterion, model):
+    def __init__(self, epochs, batch_size, optimizer, criterion, model, device):
         self.optimizer, self.criterion, self.model = optimizer, criterion, model
         self.epochs, self.batch_size = epochs, batch_size
 
-        self.best_train_loss = 0
+        self.best_train_loss = 5
+
+        self.device = device
 
     def evaluate(self, iterator):
         self.model.eval()
@@ -27,6 +32,8 @@ class Training():
 
         with torch.no_grad():
             for batch, (inp, target) in enumerate(iterator):
+                inp = inp.to(self.device)
+                target = target.to(self.device)
                 self.optimizer.zero_grad()
                 output = self.model(inp)[1]
 
@@ -36,14 +43,15 @@ class Training():
         test_loss = epoch_loss / len(iterator)
         print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} |')
 
-    def train(self, iterator):
+    def train(self, iterator, epoch, path):
         self.model.train()
 
         epoch_loss = 0
 
         for batch, (inp, target) in enumerate(iterator):
-            # print(batch, inp)
             self.optimizer.zero_grad()
+            inp = inp.to(self.device)
+            target = target.to(self.device)
             output = self.model(inp)[1]
 
             loss = self.criterion(output, target)
@@ -52,6 +60,22 @@ class Training():
 
             epoch_loss += loss.item()
 
+            if epoch_loss / len(iterator) < self.best_train_loss and batch == len(iterator) - 1:
+                print(f'Output: {output[:3]}, Target: {target[:3]}')
+                self.best_train_loss = epoch_loss / len(iterator)
+                path = os.path.join(path, "iter_checkpoint.pt")
+                torch.save({'checkpoint_epoch': epoch,
+                            # 'checkpoint_early_stopping': early_stopping.counter,
+                            'checkpoint_idx': batch,
+                            'model_state_dict': self.model.state_dict(),
+                            # TODO: not sure if self.optimizer.state_dict is the same thing
+                            # that timour also saves (Copied from timour)
+                            'optimizer_state_dict': self.optimizer.state_dict(),
+                            # TODO: not sure if 'iterator_state' is available here
+                            # (Copied from timour)
+                            #'iterator_state': iterator.sampler.get_state()
+                            }, path)
+
         return epoch_loss / len(iterator)
 
     def train_setup(self, iterator, path):
@@ -59,18 +83,13 @@ class Training():
 
             start_time = time.time()
 
-            train_loss = self.train(iterator)
+            train_loss = self.train(iterator, epoch, path)
 
             end_time = time.time()
 
             epoch_mins, epoch_secs = self.epoch_time(start_time, end_time)
 
-            if train_loss < self.best_train_loss:
-                self.best_train_loss = train_loss
-                torch.save({'model_state_dict': self.model.state_dict(),
-                            'optimizer_state_dict': self.optimizer.state_dict(),
-                            }, path)
-
+            
             print(f'Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s')
             print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
 
@@ -86,6 +105,10 @@ class Dataset(Dataset):
     def __init__(self, data, labels):
         self.data = data
         self.labels = labels
+
+    def transform(batch):
+        pass
+
 
     def __len__(self):
         return len(self.data)

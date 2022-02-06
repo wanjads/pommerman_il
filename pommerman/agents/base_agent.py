@@ -1,5 +1,9 @@
 '''This is the base abstraction for agents in pommerman.
 All agents should inherent from this class'''
+import sys
+sys.path.append('c:/Master_WINF/3_Semester/KI_Prak/Pommerman_wanja/pommerman_il/pommerman')
+sys.path.append("..")
+sys.path.append(".")
 from .. import characters
 
 
