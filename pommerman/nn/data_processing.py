@@ -36,12 +36,15 @@ class Training():
                 target = target.to(self.device)
                 self.optimizer.zero_grad()
                 output = self.model(inp)[1]
+               # output = nn.Softmax(output, dim=1)
+                if batch == len(iterator) - 1 or batch == 1:
+                    print(f'Output: {output}, Target: {target}')
 
                 loss = self.criterion(output, target)
                 epoch_loss += loss.item()
 
         test_loss = epoch_loss / len(iterator)
-        print(f'| Test Loss: {test_loss:.3f} | Test PPL: {math.exp(test_loss):7.3f} |')
+        print(f'| Test Loss: {test_loss:.3f}')
 
     def train(self, iterator, epoch, path):
         self.model.train()
@@ -53,15 +56,16 @@ class Training():
             inp = inp.to(self.device)
             target = target.to(self.device)
             output = self.model(inp)[1]
-
+            #output = nn.Softmax(output, dim=1)
             loss = self.criterion(output, target)
             loss.backward()
             self.optimizer.step()
 
             epoch_loss += loss.item()
+            if batch == len(iterator) - 1:
+                print(f'Output: {output[:3]}, Target: {target[:3]}, Sum_out: {torch.sum(output, dim=1)}')
 
-            if epoch_loss / len(iterator) < self.best_train_loss and batch == len(iterator) - 1:
-                print(f'Output: {output[:3]}, Target: {target[:3]}')
+            if epoch_loss / len(iterator) < self.best_train_loss:
                 self.best_train_loss = epoch_loss / len(iterator)
                 path = os.path.join(path, "iter_checkpoint.pt")
                 torch.save({'checkpoint_epoch': epoch,
@@ -91,7 +95,7 @@ class Training():
 
             
             print(f'Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s')
-            print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
+            print(f'\tTrain Loss: {train_loss:.3f}')
 
     @staticmethod
     def epoch_time(start_time, end_time):

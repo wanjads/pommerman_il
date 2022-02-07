@@ -25,9 +25,9 @@ def get_nn_target(actions, imitated_agent_nr):
 
 def train_net(model, nn_inputs, nn_targets):
     param = {
-        "epochs": 100,
-        "batch_size": 32,
-        "l_rate": 0.01,
+        "epochs": 500,
+        "batch_size": 20,
+        "l_rate": 0.05,
         "path": "./saved_models/checkpoints",
         "test_size": 0.3
     }
@@ -46,8 +46,8 @@ def train_net(model, nn_inputs, nn_targets):
                                                                      batch_size=param["batch_size"], shuffle=True)
     model = model.to(device)
 
-    optimizer = optim.SGD(model.parameters(), lr=param["l_rate"])
-    criterion = torch.nn.MSELoss()
+    optimizer = optim.Adam(model.parameters(), lr=param["l_rate"])
+    criterion = torch.nn.CrossEntropyLoss()
 
     training = data_processing.Training(param["epochs"], param["batch_size"], optimizer, criterion, model, device)
 

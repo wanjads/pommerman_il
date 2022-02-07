@@ -24,9 +24,9 @@ def main():
     # Create a set of agents (exactly four)
     agent_list = [
         agent007.Agent007(),
+        simple_agent.SimpleAgent(),
         agent007.Agent007(),
-        agent007.Agent007(),
-        agent007.Agent007(),
+        simple_agent.SimpleAgent(),
     ]
     
 
@@ -37,14 +37,18 @@ def main():
     tranform_obj = utils.obsToPlanes(11)
 
     # Run the episodes just like OpenAI Gym
-    num_episodes = 20
+    num_episodes = 50
     wins = 0
     nn_inputs = []
     nn_targets = []
     for i_episode in range(num_episodes):
         state = env.reset()
         done = False
-        agent_pos = random.randint(0, 3)
+        #agent_pos = random.randint(0, 3)
+        if i_episode % 2 == 0:
+            agent_pos = 0
+        else:
+            agent_pos = 2
         while not done:
             # env.render()
             actions = env.act(state)
@@ -60,6 +64,7 @@ def main():
         else:
             win = 0
         wins += win
+
         print("winrate: " + str(wins/(i_episode + 1)))
     env.close()
 
