@@ -33,6 +33,7 @@ class Pomme(gym.Env):
                  num_rigid=None,
                  num_wood=None,
                  num_items=None,
+                 num_bombs=0,
                  max_steps=1000,
                  is_partially_observable=False,
                  env=None,
@@ -46,7 +47,7 @@ class Pomme(gym.Env):
         self._num_rigid = num_rigid
         self._num_wood = num_wood
         self._num_items = num_items
-        self._num_bombs = 3      # TODO Hyperparameter
+        self._num_bombs = num_bombs
         self._bombs = []
         self._max_steps = max_steps
         self._viewer = None

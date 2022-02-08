@@ -2,10 +2,10 @@
 import numpy as np
 
 import sys
-#sys.path.append('c:/Master_WINF/3_Semester/KI_Prak/Pommerman_wanja/pommerman_il/pommerman')
+# sys.path.append('c:/Master_WINF/3_Semester/KI_Prak/Pommerman_wanja/pommerman_il/pommerman')
 
 
-import pommerman 
+import pommerman
 from pommerman.agents import *
 import random
 
@@ -23,19 +23,18 @@ def main():
 
     # Create a set of agents (exactly four)
     agent_list = [
-        #agent007.Agent007(),
-        #simple_agent.SimpleAgent(),
+        # agent007.Agent007(),
+        # simple_agent.SimpleAgent(),
         agent007.Agent007(),
-        #simple_agent.SimpleAgent(),
+        # simple_agent.SimpleAgent(),
         stoner_agent.StonerAgent(),
     ]
-    
 
-    env = pommerman.make('PommeFFACompetition-v0', agent_list)
-
+    env = pommerman.make('DodgeBoard-v0', agent_list)
+    #env = pommerman.make('KillBoard-v0', agent_list)
     model = a2c.A2CNet()
 
-    tranform_obj = utils.obsToPlanes(constants.BOARD_SIZE)
+    tranform_obj = utils.obsToPlanes(constants.DODGE_BOARD_SIZE) # TODO variable
 
     # Run the episodes just like OpenAI Gym
     num_episodes = 50
@@ -45,11 +44,11 @@ def main():
     for i_episode in range(num_episodes):
         state = env.reset()
         done = False
-        #agent_pos = random.randint(0, 3)
+        # agent_pos = random.randint(0, 3)
         if i_episode % 2 == 0:
             agent_pos = 0
         else:
-            agent_pos = 1 # TODO schauen ob wir auch an der position sind
+            agent_pos = 1  # TODO schauen ob wir auch an der position sind
 
         last_bomb_spawned = 0  # damit nicht jede runde eine Bombe gespwaned wird
         spawn_bomb_every_x = 5
@@ -83,15 +82,14 @@ def main():
             win = 0
         wins += win
 
-        print("winrate: " + str(wins/(i_episode + 1)))
+        print("winrate: " + str(wins / (i_episode + 1)))
     env.close()
 
-    print("final winrate: " + str(wins/num_episodes))
-
+    print("final winrate: " + str(wins / num_episodes))
 
     imitation_net.train_net(model, nn_inputs, nn_targets)
 
-    return wins/num_episodes
+    return wins / num_episodes
 
 
 if __name__ == '__main__':

@@ -127,7 +127,7 @@ class obsToPlanes():
 def main():
     count = 0
     data = np.load("./states.npy", allow_pickle=True)
-    obj = obsToPlanes(constants.BOARD_SIZE)
+    obj = obsToPlanes(constants.DODGE_BOARD_SIZE) # TODO flexibel?
     for game in data:
         for state in game:
             for agent in state:

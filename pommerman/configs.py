@@ -16,6 +16,46 @@ from . import constants
 from . import envs
 from . import characters
 
+def dogde_board_env():
+    """Start up a FFA config with the competition settings."""
+    env = envs.v0.Pomme
+    game_type = constants.GameType.FFA
+    env_entry_point = 'pommerman.envs.v0:Pomme'
+    env_id = 'DodgeBoard-v0'
+    env_kwargs = {
+        'game_type': game_type,
+        'board_size': constants.DODGE_BOARD_SIZE,
+        'num_rigid': constants.DODGE_NUM_RIGID,
+        'num_wood': constants.DODGE_NUM_WOOD,
+        'num_items': constants.DODGE_NUM_ITEMS,
+        'num_bombs': constants.DODGE_NUM_BOMBS,
+        'max_steps': constants.MAX_STEPS,
+        'render_fps': constants.RENDER_FPS,
+        'env': env_entry_point,
+    }
+    agent = characters.Bomber
+    return locals()
+
+
+def kill_board_env():
+    """Start up a FFA config with the competition settings."""
+    env = envs.v0.Pomme
+    game_type = constants.GameType.FFA
+    env_entry_point = 'pommerman.envs.v0:Pomme'
+    env_id = 'KillBoard-v0'
+    env_kwargs = {
+        'game_type': game_type,
+        'board_size': constants.KILL_BOARD_SIZE,
+        'num_rigid': constants.KILL_NUM_RIGID,
+        'num_wood': constants.KILL_NUM_WOOD,
+        'num_items': constants.KILL_NUM_ITEMS,
+        'max_steps': constants.MAX_STEPS,
+        'render_fps': constants.RENDER_FPS,
+        'env': env_entry_point,
+    }
+    agent = characters.Bomber
+    return locals()
+
 
 def one_vs_one_env():
     """Start up an OneVsOne config with the default settings."""
@@ -54,6 +94,8 @@ def ffa_competition_env():
         'env': env_entry_point,
     }
     agent = characters.Bomber
+    # hier ein Fehler damit ich finde wie ich hier hin komme
+    #game_type[0]
     return locals()
 
 
