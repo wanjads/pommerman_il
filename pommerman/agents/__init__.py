@@ -10,3 +10,4 @@ from .simple_agent import SimpleAgent
 from .tensorforce_agent import TensorForceAgent
 from .agent007 import Agent007
 from .simple_agent_cautious_bomb import CautiousAgent
+from .stoner_agent import StonerAgent

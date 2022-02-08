@@ -46,6 +46,8 @@ class Pomme(gym.Env):
         self._num_rigid = num_rigid
         self._num_wood = num_wood
         self._num_items = num_items
+        self._num_bombs = 3      # TODO Hyperparameter
+        self._bombs = []
         self._max_steps = max_steps
         self._viewer = None
         self._is_partially_observable = is_partially_observable
@@ -128,13 +130,17 @@ class Pomme(gym.Env):
         self._board = utility.make_board(self._board_size, self._num_rigid,
                                          self._num_wood, len(self._agents))
 
+    def make_bomb_board(self):
+        self._board, self._bombs = utility.make_bomb_board(self._board, self._agents, self._num_bombs, self._bombs)
+        self._num_bombs = 1  # after the first initalization there will be only spawned one bomb at the time
+
     def make_items(self):
         self._items = utility.make_items(self._board, self._num_items)
 
     def act(self, obs):
         agents = [agent for agent in self._agents \
                   if agent.agent_id != self.training_agent]
-        return self.model.act(agents, obs, self.action_space, is_communicative=True)
+        return self.model.act(agents, obs, self.action_space)
 
     def get_observations(self):
         self.observations = self.model.get_observations(
@@ -166,7 +172,7 @@ class Pomme(gym.Env):
             self._step_count = 0
             self.make_board()
             self.make_items()
-            self._bombs = []
+            self.make_bomb_board()
             self._flames = []
             self._powerups = []
             for agent_id, agent in enumerate(self._agents):

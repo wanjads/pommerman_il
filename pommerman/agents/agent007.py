@@ -157,9 +157,10 @@ class Agent007(BaseAgent):
             directions = [k for k in directions if k != constants.Action.Stop]
         if not len(directions):
             directions = [constants.Action.Stop]
-
-        received_message = obs['message']
-
+        try:
+            received_message = obs['message']
+        except KeyError:
+            received_message = (0,0)
         # Choose a random but valid direction.
         probabilities = self.get_probabilities(
             directions, my_position, self._recently_visited_positions, received_message)
@@ -529,8 +530,10 @@ class Agent007(BaseAgent):
         return np.array(probs)/sum(probs)
 
     def communicator(self, obs):
-
-        received = obs['message']
+        try:
+            received = obs['message']
+        except KeyError:
+            received = (0, 0)
         if obs['step_count'] == 0:
             received = (0, 0)
 

@@ -1,5 +1,6 @@
 
 import numpy as np
+from pommerman import constants
 
 class obsToPlanes():
     def __init__(self, size, max_bombs=5, max_flame_life=3):
@@ -126,7 +127,7 @@ class obsToPlanes():
 def main():
     count = 0
     data = np.load("./states.npy", allow_pickle=True)
-    obj = obsToPlanes(11)
+    obj = obsToPlanes(constants.BOARD_SIZE)
     for game in data:
         for state in game:
             for agent in state:

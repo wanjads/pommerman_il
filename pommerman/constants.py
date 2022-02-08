@@ -5,10 +5,10 @@ This includes not just ints but also classes like Item, GameType, Action, etc.
 from enum import Enum
 
 RENDER_FPS = 15
-BOARD_SIZE = 11
-NUM_RIGID = 36
-NUM_WOOD = 36
-NUM_ITEMS = 20
+BOARD_SIZE = 8              # 11
+NUM_RIGID = BOARD_SIZE*3    # 36
+NUM_WOOD = BOARD_SIZE*3     # 36
+NUM_ITEMS = BOARD_SIZE*2    # 20
 BOARD_SIZE_ONE_VS_ONE = 8
 NUM_RIGID_ONE_VS_ONE = 16
 NUM_WOOD_ONE_VS_ONE = 16

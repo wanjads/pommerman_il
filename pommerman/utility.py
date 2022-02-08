@@ -11,6 +11,7 @@ from gym import spaces
 import numpy as np
 
 from . import constants
+from . import characters
 
 
 class PommermanJSONEncoder(json.JSONEncoder):
@@ -36,7 +37,42 @@ class PommermanJSONEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
-def make_board(size, num_rigid=0, num_wood=0, num_agents=4):
+def make_bomb_board(board, agent_list, num_bomb=0, bomb_list=[]):
+
+    def lay_bomb(num_left, coordinates, board):
+        x, y = random.sample(coordinates, 1)[0]
+        coordinates.remove((x, y))
+        board[x, y] = constants.Item.Bomb.value
+        # random life and bomb_strenght
+        # TODO Hyperparameter
+        bomb_life = random.randint(2, 4)
+        bomb_strength = random.randint(1, 5)
+        bomb_list.append(characters.Bomb(bomber=agent_list[0], position=(x, y), life=bomb_life, blast_strength=bomb_strength,
+                                         moving_direction=None))
+        num_left -= 1
+        return num_left
+
+    # ermittle mögliche koordinaten = freie stellen auf dem board = passage(0)
+    coordinates = set([
+        (x, y) for x, y in itertools.product(range(len(board[0])), range(len(board[0]))) if
+        board[x][y] == constants.Item.Passage.value])
+    #   coordinate_list = [] # todo set
+    #   for x in range(len(board[0])):
+    #       for y in range(len(board[0])):
+    #           if board[x][y] == constants.Item.Passage.value:
+    #               coordinate_list.append((x, y))
+    #    coordinates = set(coordinate_list)
+    # Lay down the bombs
+    while num_bomb > 0:
+        if num_bomb < len(coordinates):
+            num_bomb = lay_bomb(num_bomb, coordinates, board)
+        else:
+            # gibt keine freien koordinaten mehr
+            num_bomb = 0
+    return board, bomb_list
+
+
+def make_board(size, num_rigid=0, num_wood=0, num_agents=4, num_bomb=0):
     """Make the random but symmetric board.
 
     The numbers refer to the Item enum in constants. This is:
@@ -71,7 +107,7 @@ def make_board(size, num_rigid=0, num_wood=0, num_agents=4):
         num_left -= 2
         return num_left
 
-    def make(size, num_rigid, num_wood, num_agents):
+    def make(size, num_rigid, num_wood, num_agents, num_bomb):
         '''Constructs a game/board'''
         # Initialize everything as a passage.
         board = np.ones((size,
@@ -139,16 +175,15 @@ def make_board(size, num_rigid=0, num_wood=0, num_agents=4):
         while num_wood > 0:
             num_wood = lay_wall(constants.Item.Wood.value, num_wood,
                                 coordinates, board)
-
         return board, agents
 
     assert (num_rigid % 2 == 0)
     assert (num_wood % 2 == 0)
-    board, agents = make(size, num_rigid, num_wood, num_agents)
+    board, agents = make(size, num_rigid, num_wood, num_agents, num_bomb)
 
     # Make sure it's possible to reach most of the passages.
     while len(inaccessible_passages(board, agents)) > 4:
-        board, agents = make(size, num_rigid, num_wood, num_agents)
+        board, agents = make(size, num_rigid, num_wood, num_agents, num_bomb)
 
     return board
 
