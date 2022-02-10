@@ -76,15 +76,17 @@ class A2CNet(PommerModel):
         # create the two heads which will be used in the hybrid fwd pass
         self.policy_head = nn.Linear(64, n_labels)
         self.value_head = nn.Linear(512, 1)
-        self.device = torch.device("cpu")
+        self.device = torch.device("cuda" if torch.cuda.is_available() and torch.version.hip else "cpu")
         # TODO prüfen
         self.rnn_hidden_size = 64
         self.obs_width = board_width
         self.gamma = 0.99  # Discount factor for rewards (default 0.99)
         self.entropy_coef = 0.01  # Entropy coefficient (0.01)
         self.lr = 0.001  # 3e-2
+        self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
+        self.eps = np.finfo(np.float32).eps.item()
 
-    def forward(self, flat_input):
+    def forward(self, flat_input, hn, cn):
         """
         Implementation of the forward pass of the full network
         Uses a broadcast add operation for the shortcut and the output of the residual block
@@ -95,18 +97,20 @@ class A2CNet(PommerModel):
         x, state_bf = self.unflatten(flat_input)
 
         out = self.body(x)
-        rnn_out, _ = self.lstm(out)
-        rnn_out = self.linear_after_lstm(rnn_out)
+        hn, cn = self.lstm(out, (hn, cn))
+        rnn_out = self.linear_after_lstm(hn)
 
         value = self.value_head(out)
         policy = self.policy_head(rnn_out)
 
-        return value, policy
+        return policy, value, hn, cn
 
     def init_rnn(self):
         device = self.device
         s = self.rnn_hidden_size
-        return torch.zeros(s).detach().numpy(), torch.zeros(s).detach().numpy()
+        ret_1 = torch.zeros(s).detach().numpy()
+        ret_2 = torch.zeros(s).detach().numpy()
+        return ret_1, ret_2
 
     def discount_rewards(self, _rewards):
         R = 0

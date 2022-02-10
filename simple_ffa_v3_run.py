@@ -10,7 +10,7 @@ from pommerman.agents import *
 import random
 
 from pommerman.nn import imitation_net
-from pommerman.nn import a2c
+from pommerman.nn import a2c_rl
 from pommerman.nn import utils
 from pommerman import constants
 
@@ -44,12 +44,7 @@ def main():
     for i_episode in range(num_episodes):
         state = env.reset()
         done = False
-        # agent_pos = random.randint(0, 3)
-        if i_episode % 2 == 0:
-            agent_pos = 0
-        else:
-            agent_pos = 1  # TODO schauen ob wir auch an der position sind
-
+        agent_pos = 0
         last_bomb_spawned = 0  # damit nicht jede runde eine Bombe gespwaned wird
         spawn_bomb_every_x = 5
 
