@@ -35,7 +35,7 @@ class World:
             #agents.SimpleAgent(),
             #agents.SimpleAgent()
         ]
-        self.env = pommerman.make('DodgeBoard-v0', self.agent_list)
+        self.env = pommerman.make('BombBoard-v0', self.agent_list)
         fmt = {
             'int': self.color_sign,
             'float': self.color_sign

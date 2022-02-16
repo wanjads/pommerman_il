@@ -174,7 +174,8 @@ class Pomme(gym.Env):
             self._step_count = 0
             self.make_board()
             self.make_items()
-            self.make_bomb_board()
+            if self._num_bombs != 0:
+                self.make_bomb_board()
             self._flames = []
             self._powerups = []
             for agent_id, agent in enumerate(self._agents):
