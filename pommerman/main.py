@@ -93,7 +93,7 @@ def do_rollout(env, leif, do_print=False):
 
 
         last_bomb_spawned += 1
-        if last_bomb_spawned % spawn_bomb_every_x == 0:
+        if last_bomb_spawned % spawn_bomb_every_x == 0 and env.spec.id == "DodgeBoard-v0":
             env.make_bomb_board()
 
     hidden = hidden[:-1].copy()
