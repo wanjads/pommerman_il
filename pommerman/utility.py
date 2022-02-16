@@ -56,12 +56,6 @@ def make_bomb_board(board, agent_list, num_bomb=0, bomb_list=[]):
     coordinates = set([
         (x, y) for x, y in itertools.product(range(len(board[0])), range(len(board[0]))) if
         board[x][y] == constants.Item.Passage.value])
-    #   coordinate_list = [] # todo set
-    #   for x in range(len(board[0])):
-    #       for y in range(len(board[0])):
-    #           if board[x][y] == constants.Item.Passage.value:
-    #               coordinate_list.append((x, y))
-    #    coordinates = set(coordinate_list)
     # Lay down the bombs
     while num_bomb > 0:
         if num_bomb < len(coordinates):
@@ -72,7 +66,7 @@ def make_bomb_board(board, agent_list, num_bomb=0, bomb_list=[]):
     return board, bomb_list
 
 
-def make_board(size, num_rigid=0, num_wood=0, num_agents=4, num_bomb=0):
+def make_board(size, num_rigid=0, num_wood=0, num_agents=4, num_bomb=0, board_name=""):
     """Make the random but symmetric board.
 
     The numbers refer to the Item enum in constants. This is:
@@ -185,6 +179,12 @@ def make_board(size, num_rigid=0, num_wood=0, num_agents=4, num_bomb=0):
     while len(inaccessible_passages(board, agents)) > 4:
         board, agents = make(size, num_rigid, num_wood, num_agents, num_bomb)
 
+    # isolate the stoner in the DodgeBoard-v0
+    if board_name == "DodgeBoard-v0":
+        board[size - 2, size - 1] = constants.Item.Rigid.value  # right
+        board[size - 2, size - 3] = constants.Item.Rigid.value  # left
+        board[size - 1, size - 2] = constants.Item.Rigid.value  # under
+        board[size - 3, size - 2] = constants.Item.Rigid.value  # over
     return board
 
 

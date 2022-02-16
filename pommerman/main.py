@@ -73,7 +73,7 @@ def do_rollout(env, leif, do_print=False):
     spawn_bomb_every_x = 5
 
     while not done and 10 in state[0]['alive']:
-        # env.render()
+        env.render()
         if do_print:
             time.sleep(0.1)
             os.system('clear')

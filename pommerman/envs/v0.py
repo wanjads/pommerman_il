@@ -128,8 +128,9 @@ class Pomme(gym.Env):
                 self._init_game_state = json.loads(f.read())
 
     def make_board(self):
+        board_name = self.spec.id
         self._board = utility.make_board(self._board_size, self._num_rigid,
-                                         self._num_wood, len(self._agents))
+                                         self._num_wood, len(self._agents), board_name=board_name)
 
     def make_bomb_board(self):
         self._board, self._bombs = utility.make_bomb_board(self._board, self._agents, self._num_bombs, self._bombs)
