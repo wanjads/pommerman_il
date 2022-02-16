@@ -32,15 +32,16 @@ def main():
 
     env = pommerman.make('PommeRadioCompetition-v2', agent_list)
 
-    model = a2c.A2CNet()
+    model = a2c_rl.A2CNet()
 
     tranform_obj = utils.obsToPlanes(11)
 
     # Run the episodes just like OpenAI Gym
-    num_episodes = 50
+    num_episodes = 2
     wins = 0
     nn_inputs = []
     nn_targets = []
+    nn_index = []
     for i_episode in range(num_episodes):
         state = env.reset()
         done = False
@@ -58,6 +59,7 @@ def main():
                 nn_inputs += [nn_input]
                 nn_target = imitation_net.get_nn_target(actions, agent_pos)
                 nn_targets += [nn_target]
+                nn_index.append(1) if done else nn_index.append(0)
         print('Episode {} finished'.format(i_episode + 1))
         if info['result'].value == 0 and agent_pos in info['winners']:
             win = 1
@@ -67,6 +69,8 @@ def main():
 
         print("winrate: " + str(wins/(i_episode + 1)))
     env.close()
+
+    
 
     print("final winrate: " + str(wins/num_episodes))
 
