@@ -84,7 +84,7 @@ class Leif(agents.BaseAgent):
         self.actions.append(action)
         self.states.append(obs.squeeze(0).cpu().numpy())
         self.probs.append(probs.detach().cpu().numpy())
-        print(val)
+        # print(val)
         self.values.append(val.detach().item())
         #self.hidden.append(
         #    (hn.squeeze(0).clone().detach().numpy(),

@@ -245,7 +245,7 @@ def train(world):
 
     rr = 0
     ii = 0
-    for i in range(100):
+    for i in range(1000000):
         full_rollouts = [do_rollout(env, leif) for _ in range(ROLLOUTS_PER_BATCH)]
         states, hns, cns, actions, rewards, gae = unroll_rollouts(gmodel, full_rollouts)
         gmodel.gamma = 0.5 + 1 / 2. / (1 + math.exp(-0.0003 * (i - 20000)))  # adaptive gamma
