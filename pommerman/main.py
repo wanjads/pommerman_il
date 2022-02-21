@@ -99,7 +99,7 @@ def do_rollout(env, leif, do_print=False):
         dones.append(done)
 
         last_bomb_spawned += 1
-        env.render()
+        # env.render()
         if last_bomb_spawned % spawn_bomb_every_x == 0 and env.spec.id == "DodgeBoard-v0" and not done:
             env.make_bomb_board()
 
@@ -307,7 +307,7 @@ def evaluate(world):
         done, state, _ = False, env.reset(), leif.clear()
         t = 0
         while not done:
-            env.render()
+            # env.render()
             if do_print:
                 time.sleep(0.1)
                 # os.system('clear')
