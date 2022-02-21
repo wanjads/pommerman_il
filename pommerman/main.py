@@ -80,7 +80,7 @@ def do_rollout(env, leif, do_print=False):
 
     while not done and 10 in state[0]['alive']:
 
-        env.render()
+        # env.render()
         if do_print:
             time.sleep(0.1)
             os.system('clear')
