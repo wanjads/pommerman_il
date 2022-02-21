@@ -67,11 +67,8 @@ class Training():
 
             if epoch_loss / len(iterator) < self.best_train_loss:
                 self.best_train_loss = epoch_loss / len(iterator)
-                path = os.path.join(path, "iter_checkpoint.pt")
-                torch.save({'checkpoint_epoch': epoch,
-                            # 'checkpoint_early_stopping': early_stopping.counter,
-                            'checkpoint_idx': batch,
-                            'model_state_dict': self.model.state_dict(),
+                path = os.path.join(path, "torch_state.tar")
+                torch.save({'model_state_dict': self.model.state_dict(),
                             # TODO: not sure if self.optimizer.state_dict is the same thing
                             # that timour also saves (Copied from timour)
                             'optimizer_state_dict': self.optimizer.state_dict(),

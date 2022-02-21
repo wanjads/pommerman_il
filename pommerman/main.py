@@ -7,10 +7,11 @@ import time
 import math
 import os
 import numpy.matlib
+from pathlib import Path
 
 
 # tobis anpassungen erfordern
-from nn.a2c_rl import A2CNet
+from nn.a2c_v3 import A2CNet
 import pommerman
 import numpy as np
 import torch
@@ -22,10 +23,15 @@ batch = []
 
 class World:
     def __init__(self, init_gmodel=True):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         if init_gmodel:
             self.gmodel = A2CNet()  # Global model
+            self.gmodel = self.gmodel.to(self.device)
 
         self.model = A2CNet()  # Agent (local) model # TODO change to our A2cNet
+        self.model = self.model.to(self.device)
+        
+
         self.leif = Leif(self.model)
 
         self.agent_list = [
@@ -35,7 +41,7 @@ class World:
             #agents.SimpleAgent(),
             #agents.SimpleAgent()
         ]
-        self.env = pommerman.make('BombBoard-v0', self.agent_list)
+        self.env = pommerman.make('DodgeBoard-v0', self.agent_list)
         fmt = {
             'int': self.color_sign,
             'float': self.color_sign
@@ -65,7 +71,7 @@ class World:
 def do_rollout(env, leif, do_print=False):
     done, state = False, env.reset()
     rewards, dones = [], []
-    states, actions, hidden, probs, values = leif.clear()
+    states, actions, probs, values = leif.clear() #, hidden
     old_state = None
     last_action = 0
 
@@ -96,11 +102,11 @@ def do_rollout(env, leif, do_print=False):
         if last_bomb_spawned % spawn_bomb_every_x == 0 and env.spec.id == "DodgeBoard-v0":
             env.make_bomb_board()
 
-    hidden = hidden[:-1].copy()
+    #hidden = hidden[:-1].copy()
     hns, cns = [], []
-    for hns_cns_tuple in hidden:
-        hns.append(hns_cns_tuple[0])
-        cns.append(hns_cns_tuple[1])
+    #for hns_cns_tuple in hidden:
+    #    hns.append(hns_cns_tuple[0])
+    #    cns.append(hns_cns_tuple[1])
 
     rewards = rewards[:len(values)]
 
@@ -169,9 +175,10 @@ def get_reward(state, old_state, agent_nr, action, last_action):
 
 
 def gmodel_train(gmodel, states, hns, cns, actions, rewards, gae):
-    states, hns, cns = torch.stack(states), torch.stack(hns, dim=0), torch.stack(cns, dim=0)
+    #states, hns, cns = torch.stack(states), torch.stack(hns, dim=0), torch.stack(cns, dim=0)
+    states = torch.stack(states)
     gmodel.train()
-    probs, values, _, _ = gmodel(states.to(gmodel.device), hns.to(gmodel.device), cns.to(gmodel.device))
+    values, probs, _, _ = gmodel(states.to(gmodel.device))
 
     prob = F.softmax(probs, dim=-1)
     log_prob = F.log_softmax(probs, dim=-1)
@@ -198,12 +205,12 @@ def unroll_rollouts(gmodel, list_of_full_rollouts):
 
     states, actions, rewards, hns, cns, gae = [], [], [], [], [], []
     for (s, a, r, d, h, p, v) in list_of_full_rollouts:
-        states.extend(torch.tensor(s))
+        states.extend(torch.tensor(np.array(s)))
         actions.extend(a)
         rewards.extend(gmodel.discount_rewards(r))
 
-        hns.extend([torch.tensor(hh) for hh in h[0]])
-        cns.extend([torch.tensor(hh) for hh in h[1]])
+        #hns.extend([torch.tensor(hh) for hh in h[0]])
+        #cns.extend([torch.tensor(hh) for hh in h[1]])
 
         # Calculate GAE
         last_i, _gae, __gae = len(r) - 1, [], 0
@@ -219,12 +226,15 @@ def unroll_rollouts(gmodel, list_of_full_rollouts):
 
 
 def train(world):
+    path = "./saved_models"
+    if not os.path.exists(path):
+        os.makedirs(path)
     model, gmodel = world.model, world.gmodel
     leif, env = world.leif, world.env
 
     if os.path.isfile("convrnn-s.weights"):  # turn off for new model
-        model.load_state_dict(torch.load("convrnn-s.weights", map_location='cpu'))
-        gmodel.load_state_dict(torch.load("convrnn-s.weights", map_location='cpu'))
+        model.load_state_dict(torch.load("convrnn-s.weights"))
+        gmodel.load_state_dict(torch.load("convrnn-s.weights"))
         print("loaded checkpoint")
 
     if os.path.exists("training.txt"):
@@ -232,7 +242,7 @@ def train(world):
 
     rr = 0
     ii = 0
-    for i in range(3001):
+    for i in range(11):
         full_rollouts = [do_rollout(env, leif) for _ in range(ROLLOUTS_PER_BATCH)]
         states, hns, cns, actions, rewards, gae = unroll_rollouts(gmodel, full_rollouts)
         gmodel.gamma = 0.5 + 1 / 2. / (1 + math.exp(-0.0003 * (i - 20000)))  # adaptive gamma
@@ -244,9 +254,23 @@ def train(world):
         with open("training.txt", "a") as f:
             print(rr, "\t", round(gmodel.gamma, 4), "\t", round(vl, 3), "\t", round(pl, 3), "\t", round(l, 3), file=f)
         model.load_state_dict(gmodel.state_dict())
-        if i >= 10 and i % 30 == 0:
-            torch.save(gmodel.state_dict(), "convrnn-s.weights")
+        if i >= 10 and i % 10 == 0:
+            path_2 = os.path.join(path, "torch_state.tar")
+            torch.save({'model_state_dict': model.state_dict(),
+                            # TODO: not sure if self.optimizer.state_dict is the same thing
+                            # that timour also saves (Copied from timour)
+                            'optimizer_state_dict': gmodel.optimizer.state_dict(),
+                            # TODO: not sure if 'iterator_state' is available here
+                            # (Copied from timour)
+                            #'iterator_state': iterator.sampler.get_state()
+                            }, path_2)
             print("saved weights")
+    dummy_input = torch.ones(1, 18, 11, 11, dtype=torch.float)
+    dummy_input = dummy_input.to(world.gmodel.device)
+    input_names = ["data"]
+    output_names = ["value_out", "policy_out"]
+    torch.onnx.export(model, dummy_input, str(path / Path(f"model-bsize-{1}.onnx")), input_names=input_names,
+                      output_names=output_names)
 
 
 def run(world):
@@ -275,7 +299,7 @@ def evaluate(world):
     reward = 0
 
     while True:
-        model.load_state_dict(torch.load("convrnn-s.weights", map_location='cpu')) # datei nicht vorhanden
+        model.load_state_dict(torch.load("saved_models/torch_state.tar")["model_state_dict"]) # datei nicht vorhanden
 
         done, state, _ = False, env.reset(), leif.clear()
         t = 0

@@ -76,7 +76,7 @@ class A2CNet(PommerModel):
         # create the two heads which will be used in the hybrid fwd pass
         self.policy_head = nn.Linear(64, n_labels)
         self.value_head = nn.Linear(512, 1)
-        self.device = torch.device("cpu")
+        self.device = torch.device("cuda")
         # TODO prüfen
         self.rnn_hidden_size = 64
         self.obs_width = board_width

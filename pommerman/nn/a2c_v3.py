@@ -75,6 +75,17 @@ class A2CNet(PommerModel):
         self.policy_head = nn.Linear(64, n_labels)
         self.value_head = nn.Linear(64, 1)
 
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(self.device)
+        # TODO prüfen
+        self.rnn_hidden_size = 64
+        self.obs_width = board_width
+        self.gamma = 0.99  # Discount factor for rewards (default 0.99)
+        self.entropy_coef = 0.01  # Entropy coefficient (0.01)
+        self.lr = 0.001  # 3e-2
+        self.optimizer = optim.Adam(self.parameters(), lr=self.lr)
+        self.eps = np.finfo(np.float32).eps.item()
+
     def forward(self, flat_input):
         """
         Implementation of the forward pass of the full network
@@ -92,7 +103,7 @@ class A2CNet(PommerModel):
         value = self.value_head(value_net)
         policy = self.policy_head(policy_net)
 
-        return value, policy
+        return value, policy, "_", "_"
 
     def init_rnn(self):
         device = self.device

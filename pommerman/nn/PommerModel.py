@@ -20,7 +20,7 @@ class PommerModel(nn.Module, metaclass=ABCMeta):
         self.state_batch_dim = state_batch_dim
 
         self.sequence_length = None
-        self.has_state_input = None
+        self.has_state_input = False
         self.nb_input_channels = nb_input_channels
         self.board_width = board_width
         self.board_height = board_height
