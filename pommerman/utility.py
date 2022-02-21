@@ -38,7 +38,6 @@ class PommermanJSONEncoder(json.JSONEncoder):
 
 
 def make_bomb_board(board, agent_list, num_bomb=0, bomb_list=[]):
-
     def lay_bomb(num_left, coordinates, board):
         x, y = random.sample(coordinates, 1)[0]
         coordinates.remove((x, y))
@@ -46,19 +45,36 @@ def make_bomb_board(board, agent_list, num_bomb=0, bomb_list=[]):
         # random life and bomb_strenght
         # TODO Hyperparameter
         bomb_life = random.randint(2, 4)
-        bomb_strength = random.randint(1, 5)
-        bomb_list.append(characters.Bomb(bomber=agent_list[0], position=(x, y), life=bomb_life, blast_strength=bomb_strength,
-                                         moving_direction=None))
+        bomb_strength = random.randint(2, 5)
+        bomb_list.append(
+            characters.Bomb(bomber=agent_list[0], position=(x, y), life=bomb_life, blast_strength=bomb_strength,
+                            moving_direction=None))
         num_left -= 1
         return num_left
 
     # ermittle mögliche koordinaten = freie stellen auf dem board = passage(0)
-    coordinates = set([
-        (x, y) for x, y in itertools.product(range(len(board[0])), range(len(board[0]))) if
-        board[x][y] == constants.Item.Passage.value])
+    #coordinates = set([
+    #    (x, y) for x, y in itertools.product(range(len(board[0])), range(len(board[0]))) if
+    #    board[x][y] == constants.Item.Passage.value])
+
+    # ermittle Umgebung unseres Agenten
+    pos_tuple = np.where(board == 10)
+    pos = (pos_tuple[0][0], pos_tuple[1][0])
+
+    coordinates = []
+    if pos[0] > 0 and board[pos[0] - 1][pos[1]] == constants.Item.Passage.value:
+        coordinates.append((pos[0] - 1, pos[1]))  # left
+    if pos[0] < len(board[0]) and board[pos[0] + 1][pos[1]] == constants.Item.Passage.value:
+        coordinates.append((pos[0] + 1, pos[1]))  # right
+    if pos[1] > 0 and board[pos[0]][pos[1] - 1] == constants.Item.Passage.value:
+        coordinates.append((pos[0], pos[1]-1))  # up
+    if pos[1] < len(board[0]) and board[pos[0]][pos[1] + 1] == constants.Item.Passage.value:
+        coordinates.append((pos[0], pos[1]+1))  # down
+    # TODO schauen, dass er auch ausweichen kann
+
     # Lay down the bombs
     while num_bomb > 0:
-        if num_bomb < len(coordinates):
+        if num_bomb <= len(coordinates):
             num_bomb = lay_bomb(num_bomb, coordinates, board)
         else:
             # gibt keine freien koordinaten mehr

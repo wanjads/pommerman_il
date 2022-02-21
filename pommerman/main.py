@@ -41,7 +41,7 @@ class World:
             #agents.SimpleAgent(),
             #agents.SimpleAgent()
         ]
-        self.env = pommerman.make('BombBoard-v0', self.agent_list)
+        self.env = pommerman.make('DodgeBoard-v0', self.agent_list)
         fmt = {
             'int': self.color_sign,
             'float': self.color_sign
@@ -79,6 +79,7 @@ def do_rollout(env, leif, do_print=False):
     spawn_bomb_every_x = 5
 
     while not done and 10 in state[0]['alive']:
+
         env.render()
         if do_print:
             time.sleep(0.1)
@@ -97,10 +98,12 @@ def do_rollout(env, leif, do_print=False):
         rewards.append(reward)
         dones.append(done)
 
-
         last_bomb_spawned += 1
-        if last_bomb_spawned % spawn_bomb_every_x == 0 and env.spec.id == "DodgeBoard-v0":
+        env.render()
+        if last_bomb_spawned % spawn_bomb_every_x == 0 and env.spec.id == "DodgeBoard-v0" and not done:
             env.make_bomb_board()
+
+
 
     #hidden = hidden[:-1].copy()
     hns, cns = [], []
@@ -242,7 +245,7 @@ def train(world):
 
     rr = 0
     ii = 0
-    for i in range(11):
+    for i in range(100):
         full_rollouts = [do_rollout(env, leif) for _ in range(ROLLOUTS_PER_BATCH)]
         states, hns, cns, actions, rewards, gae = unroll_rollouts(gmodel, full_rollouts)
         gmodel.gamma = 0.5 + 1 / 2. / (1 + math.exp(-0.0003 * (i - 20000)))  # adaptive gamma
