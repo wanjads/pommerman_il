@@ -41,7 +41,7 @@ class World:
             #agents.SimpleAgent(),
             #agents.SimpleAgent()
         ]
-        self.env = pommerman.make('DodgeBoard-v0', self.agent_list)
+        self.env = pommerman.make('BombBoard-v0', self.agent_list)
         fmt = {
             'int': self.color_sign,
             'float': self.color_sign
@@ -232,9 +232,9 @@ def train(world):
     model, gmodel = world.model, world.gmodel
     leif, env = world.leif, world.env
 
-    if os.path.isfile("convrnn-s.weights"):  # turn off for new model
-        model.load_state_dict(torch.load("convrnn-s.weights"))
-        gmodel.load_state_dict(torch.load("convrnn-s.weights"))
+    if os.path.isfile("saved_models/torch_state.tar"):  # turn off for new model
+        model.load_state_dict(torch.load("saved_models/torch_state.tar")["model_state_dict"])
+        gmodel.load_state_dict(torch.load("saved_models/torch_state.tar")["model_state_dict"])
         print("loaded checkpoint")
 
     if os.path.exists("training.txt"):
