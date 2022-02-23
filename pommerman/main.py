@@ -257,7 +257,7 @@ def train(world):
         with open("training.txt", "a") as f:
             print(rr, "\t", round(gmodel.gamma, 4), "\t", round(vl, 3), "\t", round(pl, 3), "\t", round(l, 3), file=f)
         model.load_state_dict(gmodel.state_dict())
-        if i >= 10 and i % 10 == 0:
+        if i >= 1000 and i % 1000 == 0:
             path_2 = os.path.join(path, "torch_state.tar")
             torch.save({'model_state_dict': model.state_dict(),
                             # TODO: not sure if self.optimizer.state_dict is the same thing
@@ -267,13 +267,14 @@ def train(world):
                             # (Copied from timour)
                             #'iterator_state': iterator.sampler.get_state()
                             }, path_2)
-            print("saved weights")
-    dummy_input = torch.ones(1, 18, 11, 11, dtype=torch.float)
-    dummy_input = dummy_input.to(world.gmodel.device)
-    input_names = ["data"]
-    output_names = ["value_out", "policy_out"]
-    torch.onnx.export(model, dummy_input, str(path / Path(f"model-bsize-{1}.onnx")), input_names=input_names,
+            dummy_input = torch.ones(1, 18, 11, 11, dtype=torch.float)
+            dummy_input = dummy_input.to(world.gmodel.device)
+            input_names = ["data"]
+            output_names = ["value_out", "policy_out"]
+            torch.onnx.export(model, dummy_input, str(path / Path(f"model-bsize-{1}.onnx")), input_names=input_names,
                       output_names=output_names)
+            print("saved weights")
+
 
 
 def run(world):
