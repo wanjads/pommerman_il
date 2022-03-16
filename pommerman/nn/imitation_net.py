@@ -1,3 +1,8 @@
+"""
+This module initializes our agent and all parameters and hyperparameters
+for position prediction. 
+"""
+
 import numpy as np
 from pommerman.nn import data_processing
 import torch

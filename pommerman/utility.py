@@ -44,8 +44,8 @@ def make_bomb_board(board, agent_list, num_bomb=0, bomb_list=[]):
         board[x, y] = constants.Item.Bomb.value
         # random life and bomb_strenght
         # TODO Hyperparameter
-        bomb_life = random.randint(2, 4)
-        bomb_strength = random.randint(2, 5)
+        bomb_life = 9#random.randint(6, 9)
+        bomb_strength = random.randint(2, 2)
         bomb_list.append(
             characters.Bomb(bomber=agent_list[0], position=(x, y), life=bomb_life, blast_strength=bomb_strength,
                             moving_direction=None))
@@ -76,6 +76,7 @@ def make_bomb_board(board, agent_list, num_bomb=0, bomb_list=[]):
     while num_bomb > 0:
         if num_bomb <= len(coordinates):
             num_bomb = lay_bomb(num_bomb, coordinates, board)
+            #numb_bomb -= 1
         else:
             # gibt keine freien koordinaten mehr
             num_bomb = 0

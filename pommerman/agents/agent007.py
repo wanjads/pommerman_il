@@ -516,9 +516,9 @@ class Agent007(BaseAgent):
         probs = []
         for direction in directions:
             if direction == team_direction and team_direction != constants.Action.Stop:
-                team_boost = 5
+                team_boost = 1
             elif direction == second_team_direction and team_direction != constants.Action.Stop:
-                team_boost = 3
+                team_boost = 1
             else:
                 team_boost = 1
             if not utility.get_next_position(

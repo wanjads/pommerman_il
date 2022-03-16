@@ -1,4 +1,7 @@
-'''An example to show how to set up an pommerman game programmatically'''
+'''
+this module generates the data from the the Agent007 and starts the 
+imitation net for position prediction
+'''
 import numpy as np
 
 import sys
@@ -10,7 +13,7 @@ from pommerman.agents import agent007, simple_agent
 import random
 
 from pommerman.nn import imitation_net
-from pommerman.nn import a2c_rl
+from pommerman.nn import a2c
 from pommerman.nn import utils
 
 
@@ -32,12 +35,12 @@ def main():
 
     env = pommerman.make('PommeRadioCompetition-v2', agent_list)
 
-    model = a2c_rl.A2CNet()
+    model = a2c.A2CNet()
 
     tranform_obj = utils.obsToPlanes(11)
 
     # Run the episodes just like OpenAI Gym
-    num_episodes = 2
+    num_episodes = 5
     wins = 0
     nn_inputs = []
     nn_targets = []
@@ -69,10 +72,13 @@ def main():
 
         print("winrate: " + str(wins/(i_episode + 1)))
     env.close()
-
-    
+    #np.save("inputs.npy", np.array(nn_inputs))
+    #np.save("targets.npy", np.array(nn_targets))
 
     print("final winrate: " + str(wins/num_episodes))
+
+    #nn_inputs = np.load("inputs.npy")
+    #nn_targets = np.load("targets.npy")
 
 
     imitation_net.train_net(model, nn_inputs, nn_targets)

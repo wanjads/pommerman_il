@@ -80,7 +80,7 @@ class A2CNet(PommerModel):
         # TODO prüfen
         self.rnn_hidden_size = 64
         self.obs_width = board_width
-        self.gamma = 0.99  # Discount factor for rewards (default 0.99)
+        self.gamma = 0.97  # Discount factor for rewards (default 0.99)
         self.entropy_coef = 0.01  # Entropy coefficient (0.01)
         self.lr = 0.001  # 3e-2
 

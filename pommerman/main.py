@@ -8,6 +8,8 @@ import math
 import os
 import numpy.matlib
 from pathlib import Path
+import random
+import matplotlib.pyplot as plt
 
 
 # tobis anpassungen erfordern
@@ -27,8 +29,11 @@ class World:
         if init_gmodel:
             self.gmodel = A2CNet()  # Global model
             self.gmodel = self.gmodel.to(self.device)
+        self.gmodel = self.gmodel.to(self.device)
+        self.model = self.gmodel.to(self.device)
 
         self.model = A2CNet()  # Agent (local) model # TODO change to our A2cNet
+        print("device: ", self.device, " cuda av: ", torch.cuda.is_available(), " cuda device: ", torch.cuda.device(0), torch.cuda.device_count(), torch.cuda.get_device_name(0))
         self.model = self.model.to(self.device)
         
 
@@ -75,12 +80,13 @@ def do_rollout(env, leif, do_print=False):
     old_state = None
     last_action = 0
 
-    last_bomb_spawned = 0  # damit nicht jede runde eine Bombe gespwaned wird
-    spawn_bomb_every_x = 5
+    #last_bomb_spawned = 0  # damit nicht jede runde eine Bombe gespwaned wird
+    spawn_bomb_every_x = 15#random.randint(5,12)
+    counter = 0
 
     while not done and 10 in state[0]['alive']:
 
-        # env.render()
+        #env.render()
         if do_print:
             time.sleep(0.1)
             os.system('clear')
@@ -88,23 +94,28 @@ def do_rollout(env, leif, do_print=False):
 
         action = env.act(state)
         state, start_rewards, done, info = env.step(action)
+        state[0]["can_kick"] = 1
         action = action[0]
         if old_state is None:
             old_state = state
-        reward = get_reward(state, old_state, 0, action, last_action)
+        reward = get_reward(state, old_state, 0, action, last_action, done, counter)
         # print(str(state[0]['position']) + str(old_state[0]['position']) + str(reward))
         old_state = state
         last_action = action
         rewards.append(reward)
         dones.append(done)
 
-        last_bomb_spawned += 1
-        # env.render()
-        if last_bomb_spawned % spawn_bomb_every_x == 0 and env.spec.id == "DodgeBoard-v0" and not done:
+        #last_bomb_spawned += 1
+        #env.render()
+        if counter % spawn_bomb_every_x == 0 and env.spec.id == "DodgeBoard-v0" and not done:
+            print(counter)
             env.make_bomb_board()
+        counter += 1
+        
+        if counter == 100: done = True
 
 
-
+    print("rounds: ", counter)
     #hidden = hidden[:-1].copy()
     hns, cns = [], []
     #for hns_cns_tuple in hidden:
@@ -121,59 +132,90 @@ def do_rollout(env, leif, do_print=False):
             values.copy())
 
 
-def get_reward(state, old_state, agent_nr, action, last_action):
+
+
+def get_reward(state, old_state, agent_nr, action, last_action, done, counter):
     # developer note: on the board:
     # 0: nothing, 1: unbreakable wall, 2: wall, 3: bomb, 4: flames, 6,7,8: pick-ups:  11,12 and 13: enemies
     reward = 0
     # penalty for dying
-    if 10 not in state[0]['alive']:
+    #if 10 not in state[0]['alive'] and counter < 11:
+    #                 reward -= 1
+    #elif 10 not in state[0]['alive'] and counter < 15:
+    #    reward -= 0.75
+    if 10 not in state[0]['alive'] and done:
         reward -= 1
+    elif done:
+        reward += 1
+
+    if counter == 10:
+        reward += 0.1
+    elif counter == 15:
+        reward += 0.15
+    elif counter == 25:
+        reward += 0.25
+    elif counter == 20:
+        reward += 0.2
+    elif counter == 30:
+        reward += 0.3
+    elif counter == 40:
+        reward += 0.4
+    elif counter == 50: reward += 0.5
+    elif counter == 60: reward += 0.6
+    elif counter == 75: reward += 0.75
+
+    # actionfilter invalid actions
+    pos = old_state[agent_nr]['position']
+    #adj = [(i, j) for i in range(pos[0]-1, pos[0]+2) for j in range(pos[1]-1, pos[1]+2) if not ((i == j)) and (i or j in pos)]
+    if old_state[agent_nr]['position'] == state[agent_nr]['position'] and action != 0 and action != 5:
+        reward -= 0.1
+    if old_state[agent_nr]['position'] == state[agent_nr]['position'] and action != 0 and action == 5:
+        reward -= 0.2
+    if old_state[agent_nr]['position'] == state[agent_nr]['position'] and action == 0 and action != 5:
+        if last_action == 0:
+            reward -= 0.3
+
+
 
     # reward stage 0:
     # teach the agent to move and not make invalid actions (move into walls, place bombs when you have no ammo)
-    ammo = old_state[agent_nr]['ammo']
-    if action != 5:
-        if state[agent_nr]['position'] == old_state[agent_nr]['position']:
-            reward -= 0.03
-    elif ammo == 0:
-        reward -= 0.03
-
-    # reward stage 1: teach agent to bomb walls (and enemies)
-    # compute adjacent squares
-    position = state[agent_nr]['position']
-    adj = [(i, j) for i in (-1, 0, 1) for j in (-1, 0, 1) if not ((i == j) or i + j == 0)]
-    adjacent = numpy.matlib.repmat(position, 4, 1)
-    adjacent = adjacent - np.asarray(adj)
-    # limit adjacent squares to only include inside board
-    adjacent = np.clip(adjacent, 0, 10)
-    if action == 5 and ammo > 0:
-        board = state[agent_nr]['board']
-        for xy in adjacent:
-            square_val = board[xy[0]][xy[1]]
-            if square_val == 2:
-                reward += 0.2
-            elif square_val == 11 or square_val == 12 or square_val == 13:
-                reward += 0.5
-
-    # reward stage2: teach agent to not stand on or beside bombs
-    # reward /= 4
-    bomb_life = state[agent_nr]['bomb_life']
-    # if we stand on a bomb or next to bomb
-    just_placed_bomb = np.logical_xor(last_action == 5, action == 5)
-    if bomb_life[position] > 0 and not just_placed_bomb:
-        reward -= 0.1 * (9-bomb_life[position])
-    for xy in adjacent:
-        if bomb_life[xy[0]][xy[1]] > 0:
-            reward -= 0.05 * (9-bomb_life[xy[0]][xy[1]])
-
-    # reward agent for picking up power-ups
+    #ammo = old_state[agent_nr]['ammo']
+    #if action != 5:
+    #    if  == old_state[agent_nr]['position']:
+    #        reward -= 0.03
+    #elif ammo == 0:
+    #    reward -= 0.03
+#
+    ## reward stage 1: teach agent to bomb walls (and enemies)
+    ## compute adjacent squares
+    #position = state[agent_nr]['position']
+    #adj = [(i, j) for i in (-1, 0, 1) for j in (-1, 0, 1) if not ((i == j) or i + j == 0)]
+    #adjacent = numpy.matlib.repmat(position, 4, 1)
+    #adjacent = adjacent - np.asarray(adj)
+    ## limit adjacent squares to only include inside board
+    #adjacent = np.clip(adjacent, 0, 10)
+    #if action == 5 and ammo > 0:
+    #    board = state[agent_nr]['board']
+    #    for xy in adjacent:
+    #        square_val = board[xy[0]][xy[1]]
+    #        if square_val == 2:
+    #            reward += 0.2
+    #        elif square_val == 11 or square_val == 12 or square_val == 13:
+    #            reward += 0.5
+#
+    if action in [1,2,3,4]:
+        reward += 0.01
+#
+    ##reward -= 0.05 * (9-bomb_life[xy[0]][xy[1]])
+#
+    ## reward agent for picking up power-ups
     blast_strength = state[agent_nr]['blast_strength']
     old_blast_strength = old_state[agent_nr]['blast_strength']
     can_kick = int(state[agent_nr]['can_kick'])
     old_can_kick = int(old_state[agent_nr]['can_kick'])
-    reward += (can_kick-old_can_kick)*0.02
-    # reward += (max_ammo-old_max_ammo)*0.02 #TODO, see arguments
-    reward += (blast_strength-old_blast_strength)*0.02
+    reward += (can_kick-old_can_kick)*0.2
+    ##reward += (max_ammo-old_max_ammo)*0.02 #TODO, see arguments
+    reward += (blast_strength-old_blast_strength)*0.2
     return reward
 
 
@@ -239,13 +281,16 @@ def train(world):
         model.load_state_dict(torch.load("saved_models/torch_state.tar")["model_state_dict"])
         gmodel.load_state_dict(torch.load("saved_models/torch_state.tar")["model_state_dict"])
         print("loaded checkpoint")
+    print(os.path.isfile("saved_models/torch_state.tar"))
 
     if os.path.exists("training.txt"):
         os.remove("training.txt")
 
+    reward_list = []
+
     rr = 0
     ii = 0
-    for i in range(1000000):
+    for i in range(20000):
         full_rollouts = [do_rollout(env, leif) for _ in range(ROLLOUTS_PER_BATCH)]
         states, hns, cns, actions, rewards, gae = unroll_rollouts(gmodel, full_rollouts)
         gmodel.gamma = 0.5 + 1 / 2. / (1 + math.exp(-0.0003 * (i - 20000)))  # adaptive gamma
@@ -257,6 +302,7 @@ def train(world):
         with open("training.txt", "a") as f:
             print(rr, "\t", round(gmodel.gamma, 4), "\t", round(vl, 3), "\t", round(pl, 3), "\t", round(l, 3), file=f)
         model.load_state_dict(gmodel.state_dict())
+        reward_list.append(np.mean(rewards))
         if i >= 1000 and i % 1000 == 0:
             path_2 = os.path.join(path, "torch_state.tar")
             torch.save({'model_state_dict': model.state_dict(),
@@ -273,7 +319,12 @@ def train(world):
             output_names = ["value_out", "policy_out"]
             torch.onnx.export(model, dummy_input, str(path / Path(f"model-bsize-{1}.onnx")), input_names=input_names,
                       output_names=output_names)
+            
             print("saved weights")
+    print(reward_list, list(range(i+1)))
+    plot(list(range(i+1)),reward_list)
+        
+
 
 
 
@@ -322,6 +373,23 @@ def evaluate(world):
             state, reward, done, info = env.step(action)
             t += 1
 
+def plot(x, y):
+    plt.xlabel("epochs")
+    plt.ylabel("avg rewards")
+    plt.plot(x,y)
+    #plt.axis([0, len(y), -1, 2])
+    plt.show(block=False)
 
-#evaluate(World())
-train(World())
+
+def main():
+    torch.manual_seed(42)
+    torch.cuda.manual_seed(42)
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.deterministic = True
+    np.random.seed(42)
+    random.seed(42)
+    #evaluate(World())
+    train(World())
+
+if __name__ == "__main__":
+    main()

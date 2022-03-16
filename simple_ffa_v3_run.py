@@ -10,7 +10,7 @@ from pommerman.agents import *
 import random
 
 from pommerman.nn import imitation_net
-from pommerman.nn import a2c_rl
+from pommerman.nn import a2c
 from pommerman.nn import utils
 from pommerman import constants
 
