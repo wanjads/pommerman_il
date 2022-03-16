@@ -44,20 +44,14 @@ def make_bomb_board(board, agent_list, num_bomb=0, bomb_list=[]):
         board[x, y] = constants.Item.Bomb.value
         # random life and bomb_strenght
         # TODO Hyperparameter
-        bomb_life = 9#random.randint(6, 9)
+        bomb_life = random.randint(6, 9)
         bomb_strength = random.randint(2, 2)
         bomb_list.append(
             characters.Bomb(bomber=agent_list[0], position=(x, y), life=bomb_life, blast_strength=bomb_strength,
                             moving_direction=None))
         num_left -= 1
         return num_left
-
-    # ermittle mögliche koordinaten = freie stellen auf dem board = passage(0)
-    #coordinates = set([
-    #    (x, y) for x, y in itertools.product(range(len(board[0])), range(len(board[0]))) if
-    #    board[x][y] == constants.Item.Passage.value])
-
-    # ermittle Umgebung unseres Agenten
+    # find area around agent
     pos_tuple = np.where(board == 10)
     pos = (pos_tuple[0][0], pos_tuple[1][0])
 
@@ -76,9 +70,8 @@ def make_bomb_board(board, agent_list, num_bomb=0, bomb_list=[]):
     while num_bomb > 0:
         if num_bomb <= len(coordinates):
             num_bomb = lay_bomb(num_bomb, coordinates, board)
-            #numb_bomb -= 1
         else:
-            # gibt keine freien koordinaten mehr
+            # there are no more free passages around the agent
             num_bomb = 0
     return board, bomb_list
 

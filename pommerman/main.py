@@ -270,9 +270,6 @@ def train(world):
     plot(list(range(i+1)),reward_list)
 
 
-
-
-
 def run(world):
     done, ded, state, _ = False, False, world.env.reset(), world.leif.clear()
 
