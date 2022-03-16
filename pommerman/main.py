@@ -78,7 +78,7 @@ def do_rollout(env, leif, do_print=False):
     last_action = 0
 
     spawn_bomb_every_x = random.randint(5,12)
-    counter = 0
+    counter = 0     # counts steps survived
 
     while not done and 10 in state[0]['alive']:
 
@@ -99,11 +99,13 @@ def do_rollout(env, leif, do_print=False):
         rewards.append(reward)
         dones.append(done)
 
+        # check if the board has to spawn a bomb
         if counter % spawn_bomb_every_x == 0 and env.spec.id == "DodgeBoard-v0" and not done:
             print(counter)
             env.make_bomb_board()
         counter += 1
 
+        # end after 100 steps survived
         if counter == 100: done = True
 
 
@@ -125,10 +127,6 @@ def get_reward(state, old_state, agent_nr, action, last_action, done, counter):
     # 0: nothing, 1: unbreakable wall, 2: wall, 3: bomb, 4: flames, 6,7,8: pick-ups:  11,12 and 13: enemies
     reward = 0
     # penalty for dying
-    #if 10 not in state[0]['alive'] and counter < 11:
-    #                 reward -= 1
-    #elif 10 not in state[0]['alive'] and counter < 15:
-    #    reward -= 0.75
     if 10 not in state[0]['alive'] and done:
         reward -= 1
     elif done:
