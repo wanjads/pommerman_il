@@ -1,12 +1,10 @@
 from model import Leif
-#from model import A2CNet
 import colorama
 from pommerman import agents
 from collections import Counter
 import time
 import math
 import os
-import numpy.matlib
 from pathlib import Path
 import random
 import matplotlib.pyplot as plt
@@ -32,10 +30,9 @@ class World:
         self.gmodel = self.gmodel.to(self.device)
         self.model = self.gmodel.to(self.device)
 
-        self.model = A2CNet()  # Agent (local) model # TODO change to our A2cNet
+        self.model = A2CNet()  # Agent (local) model
         print("device: ", self.device, " cuda av: ", torch.cuda.is_available(), " cuda device: ", torch.cuda.device(0), torch.cuda.device_count(), torch.cuda.get_device_name(0))
         self.model = self.model.to(self.device)
-        
 
         self.leif = Leif(self.model)
 
@@ -76,17 +73,15 @@ class World:
 def do_rollout(env, leif, do_print=False):
     done, state = False, env.reset()
     rewards, dones = [], []
-    states, actions, probs, values = leif.clear() #, hidden
+    states, actions, probs, values = leif.clear()
     old_state = None
     last_action = 0
 
-    #last_bomb_spawned = 0  # damit nicht jede runde eine Bombe gespwaned wird
-    spawn_bomb_every_x = 15#random.randint(5,12)
+    spawn_bomb_every_x = random.randint(5,12)
     counter = 0
 
     while not done and 10 in state[0]['alive']:
 
-        #env.render()
         if do_print:
             time.sleep(0.1)
             os.system('clear')
@@ -99,29 +94,22 @@ def do_rollout(env, leif, do_print=False):
         if old_state is None:
             old_state = state
         reward = get_reward(state, old_state, 0, action, last_action, done, counter)
-        # print(str(state[0]['position']) + str(old_state[0]['position']) + str(reward))
         old_state = state
         last_action = action
         rewards.append(reward)
         dones.append(done)
 
-        #last_bomb_spawned += 1
-        #env.render()
         if counter % spawn_bomb_every_x == 0 and env.spec.id == "DodgeBoard-v0" and not done:
             print(counter)
             env.make_bomb_board()
         counter += 1
-        
+
         if counter == 100: done = True
 
 
     print("rounds: ", counter)
-    #hidden = hidden[:-1].copy()
+    # dont need them without lstm so set them to empty
     hns, cns = [], []
-    #for hns_cns_tuple in hidden:
-    #    hns.append(hns_cns_tuple[0])
-    #    cns.append(hns_cns_tuple[1])
-
     rewards = rewards[:len(values)]
 
     return (states.copy(),
@@ -130,8 +118,6 @@ def do_rollout(env, leif, do_print=False):
             (hns, cns),
             probs.copy(),
             values.copy())
-
-
 
 
 def get_reward(state, old_state, agent_nr, action, last_action, done, counter):
@@ -165,8 +151,6 @@ def get_reward(state, old_state, agent_nr, action, last_action, done, counter):
     elif counter == 75: reward += 0.75
 
     # actionfilter invalid actions
-    pos = old_state[agent_nr]['position']
-    #adj = [(i, j) for i in range(pos[0]-1, pos[0]+2) for j in range(pos[1]-1, pos[1]+2) if not ((i == j)) and (i or j in pos)]
     if old_state[agent_nr]['position'] == state[agent_nr]['position'] and action != 0 and action != 5:
         reward -= 0.1
     if old_state[agent_nr]['position'] == state[agent_nr]['position'] and action != 0 and action == 5:
@@ -175,38 +159,8 @@ def get_reward(state, old_state, agent_nr, action, last_action, done, counter):
         if last_action == 0:
             reward -= 0.3
 
-
-
-    # reward stage 0:
-    # teach the agent to move and not make invalid actions (move into walls, place bombs when you have no ammo)
-    #ammo = old_state[agent_nr]['ammo']
-    #if action != 5:
-    #    if  == old_state[agent_nr]['position']:
-    #        reward -= 0.03
-    #elif ammo == 0:
-    #    reward -= 0.03
-#
-    ## reward stage 1: teach agent to bomb walls (and enemies)
-    ## compute adjacent squares
-    #position = state[agent_nr]['position']
-    #adj = [(i, j) for i in (-1, 0, 1) for j in (-1, 0, 1) if not ((i == j) or i + j == 0)]
-    #adjacent = numpy.matlib.repmat(position, 4, 1)
-    #adjacent = adjacent - np.asarray(adj)
-    ## limit adjacent squares to only include inside board
-    #adjacent = np.clip(adjacent, 0, 10)
-    #if action == 5 and ammo > 0:
-    #    board = state[agent_nr]['board']
-    #    for xy in adjacent:
-    #        square_val = board[xy[0]][xy[1]]
-    #        if square_val == 2:
-    #            reward += 0.2
-    #        elif square_val == 11 or square_val == 12 or square_val == 13:
-    #            reward += 0.5
-#
     if action in [1,2,3,4]:
         reward += 0.01
-#
-    ##reward -= 0.05 * (9-bomb_life[xy[0]][xy[1]])
 #
     ## reward agent for picking up power-ups
     blast_strength = state[agent_nr]['blast_strength']
@@ -214,13 +168,11 @@ def get_reward(state, old_state, agent_nr, action, last_action, done, counter):
     can_kick = int(state[agent_nr]['can_kick'])
     old_can_kick = int(old_state[agent_nr]['can_kick'])
     reward += (can_kick-old_can_kick)*0.2
-    ##reward += (max_ammo-old_max_ammo)*0.02 #TODO, see arguments
     reward += (blast_strength-old_blast_strength)*0.2
     return reward
 
 
 def gmodel_train(gmodel, states, hns, cns, actions, rewards, gae):
-    #states, hns, cns = torch.stack(states), torch.stack(hns, dim=0), torch.stack(cns, dim=0)
     states = torch.stack(states)
     gmodel.train()
     values, probs, _, _ = gmodel(states.to(gmodel.device))
@@ -253,9 +205,6 @@ def unroll_rollouts(gmodel, list_of_full_rollouts):
         states.extend(torch.tensor(np.array(s)))
         actions.extend(a)
         rewards.extend(gmodel.discount_rewards(r))
-
-        #hns.extend([torch.tensor(hh) for hh in h[0]])
-        #cns.extend([torch.tensor(hh) for hh in h[1]])
 
         # Calculate GAE
         last_i, _gae, __gae = len(r) - 1, [], 0
@@ -290,7 +239,7 @@ def train(world):
 
     rr = 0
     ii = 0
-    for i in range(20000):
+    for i in range(1000000):
         full_rollouts = [do_rollout(env, leif) for _ in range(ROLLOUTS_PER_BATCH)]
         states, hns, cns, actions, rewards, gae = unroll_rollouts(gmodel, full_rollouts)
         gmodel.gamma = 0.5 + 1 / 2. / (1 + math.exp(-0.0003 * (i - 20000)))  # adaptive gamma
@@ -309,9 +258,6 @@ def train(world):
                             # TODO: not sure if self.optimizer.state_dict is the same thing
                             # that timour also saves (Copied from timour)
                             'optimizer_state_dict': gmodel.optimizer.state_dict(),
-                            # TODO: not sure if 'iterator_state' is available here
-                            # (Copied from timour)
-                            #'iterator_state': iterator.sampler.get_state()
                             }, path_2)
             dummy_input = torch.ones(1, 18, 11, 11, dtype=torch.float)
             dummy_input = dummy_input.to(world.gmodel.device)
@@ -319,11 +265,10 @@ def train(world):
             output_names = ["value_out", "policy_out"]
             torch.onnx.export(model, dummy_input, str(path / Path(f"model-bsize-{1}.onnx")), input_names=input_names,
                       output_names=output_names)
-            
             print("saved weights")
     print(reward_list, list(range(i+1)))
     plot(list(range(i+1)),reward_list)
-        
+
 
 
 
@@ -354,15 +299,12 @@ def evaluate(world):
     reward = 0
 
     while True:
-        model.load_state_dict(torch.load("saved_models/torch_state.tar")["model_state_dict"]) # datei nicht vorhanden
-
+        model.load_state_dict(torch.load("saved_models/torch_state.tar")["model_state_dict"])
         done, state, _ = False, env.reset(), leif.clear()
         t = 0
         while not done:
-            # env.render()
             if do_print:
                 time.sleep(0.1)
-                # os.system('clear')
                 print(state[0]['board'])
                 print("\n\n")
                 print("Probs: \t", leif.probs[-1] if len(leif.probs) > 0 else [])
@@ -377,7 +319,6 @@ def plot(x, y):
     plt.xlabel("epochs")
     plt.ylabel("avg rewards")
     plt.plot(x,y)
-    #plt.axis([0, len(y), -1, 2])
     plt.show(block=False)
 
 
