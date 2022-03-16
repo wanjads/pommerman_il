@@ -1,3 +1,7 @@
+"""
+In this module inherits all data processing classes for 
+"""
+
 import numpy as np
 import pandas as pd
 import time, random, math
@@ -56,7 +60,8 @@ class Training():
             inp = inp.to(self.device)
             target = target.to(self.device)
             output = self.model(inp)[1]
-            #output = nn.Softmax(output, dim=1)
+            soft = nn.Softmax(dim=1)
+            output = soft(output)
             loss = self.criterion(output, target)
             loss.backward()
             self.optimizer.step()
@@ -118,48 +123,3 @@ class Dataset(Dataset):
         data, label = self.data[idx], self.labels[idx]
         return torch.tensor(data).float(), torch.tensor(label).float()
 
-
-"""def main():
-    param = {
-        "epochs": 100,
-        "batch_size": 10,
-        "l_rate": 0.001,
-        "path": "./saved_models/model_weights.pt",
-        "test_size": 0.5
-    }
-
-    transformator = PositionDefinition()
-    translator = CommunicationProtocol()
-
-    elements = [1, 2, 5, 10, 11, 12, 13]
-
-    data = pd.read_csv("msg_pred_data.csv")
-    data = data.drop(columns=["Unnamed: 0"], axis=1)
-    data = [np.array(data["current_obs"]), ]
-    current_obs = []
-    last_obs = []
-    data["last_obs"]
-    message = []
-    data["message"]
-
-    input = data[['current_obs', 'last_obs', 'message']].copy()
-    labels = data[["current_true_obs"]]
-
-    X_train, X_test, y_train, y_test = train_test_split(input, labels, test_size=param["test_size"])
-
-    train_loader, test_loader = DataLoader(Dataset(X_train, y_train, elements), batch_size=param["batch_size"],
-                                           shuffle=True), DataLoader(Dataset(X_test, y_test, elements),
-                                                                     batch_size=param["batch_size"], shuffle=True)
-
-    model = PositionPrediction(len(elements) * 3)
-    optimizer = optim.Adam(model.parameters(), lr=param["l_rate"])
-    criterion = nn.MSELoss()
-
-    training = Training(param["epochs"], param["batch_size"], optimizer, criterion, model)
-
-    training.train_setup(data, param["path"])
-    training.evaluate(data)
-
-
-if __name__ == main():
-    main()"""
